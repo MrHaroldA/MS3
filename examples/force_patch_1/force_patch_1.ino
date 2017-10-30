@@ -14,7 +14,7 @@
 // Initialize the MS3 class.
 MS3 MS3;
 
-// This is the adress for the program change.
+// This is the address for the program change.
 const uint32_t P_PATCH = 0x00010000;
 
 /**
@@ -65,7 +65,7 @@ void loop() {
             MS3.get(P_PATCH, 0x02);
         }
 
-        // The MS-3 library stores the parameter and data in these variables.
+        // Store the received parameter and data in these variables.
         uint32_t parameter;
         uint8_t data[1];
 

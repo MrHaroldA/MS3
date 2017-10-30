@@ -13,7 +13,7 @@
 // Initialize the MS3 class.
 MS3 MS3;
 
-// These are adresses for the effect states.
+// These are addresses for the effect states.
 const uint32_t P_FX1   = 0x60000030;
 const uint32_t P_MOD1  = 0x60000430;
 const uint32_t P_L1    = 0x60000020;
@@ -28,7 +28,7 @@ const uint32_t P_SOLO  = 0x60000B02;
 const uint32_t P_CTL1  = 0x60000B05;
 const uint32_t P_CTL2  = 0x60000B06;
 
-// This is the adress for the program change.
+// This is the address for the program change.
 const uint32_t P_PATCH = 0x00010000;
 
 // We're going to check and report these effect blocks.
@@ -49,7 +49,7 @@ const uint32_t CHECK_THIS[] = {
 };
 const uint8_t CHECK_THIS_SIZE = sizeof(CHECK_THIS) / sizeof(CHECK_THIS[0]);
 
-// Some global variables to store effect state and changes.
+// Some global variables to store effect state and if something changed.
 uint16_t states = 0;
 bool changed = false;
 
@@ -66,7 +66,7 @@ void parseData(uint32_t parameter, uint8_t *data) {
             }
             break;
 
-        // Store all effect states for printing later.
+        // Store the effect state for printing later.
         default:
             for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
                 if (CHECK_THIS[i] == parameter) {
