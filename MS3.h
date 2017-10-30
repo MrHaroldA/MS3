@@ -345,6 +345,13 @@ class MS3 : public USBH_MIDI {
 
             queueWritePointer = (queueWritePointer < QUEUE_SIZE - 1) ? queueWritePointer + 1 : 0;
         }
+
+        /**
+         * Check if the queue is currently empty.
+         */
+        bool queueIsEmpty() {
+            return queueReadPointer == queueWritePointer;
+        }
 };
 
 #endif
