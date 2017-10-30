@@ -252,8 +252,11 @@ class MS3 : public USBH_MIDI {
 
                     // Init the editor mode.
                     MS3::send((uint8_t *)HANDSHAKE);
+                    delay(SEND_DELAY_MSEC);
                     MS3::send((uint8_t *)HANDSHAKE);
-                    MS3::set(P_EDIT, 0x01);
+                    delay(SEND_DELAY_MSEC);
+                    uint8_t data[1] = {0x01};
+                    MS3::send(P_EDIT, data, 1, 0x12);
                     delay(INIT_DELAY_MSEC);
 
                     MS3::ready = true;
