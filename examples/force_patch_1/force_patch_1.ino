@@ -6,7 +6,7 @@
  */
 
 // Uncomment this to enable verbose debug messages.
-//#define MS3_DEBUG_MODE 
+//#define MS3_DEBUG_MODE
 
 #include "Arduino.h"
 #include "MS3.h"
@@ -48,6 +48,7 @@ void parseData(uint32_t parameter, uint8_t *data) {
 void setup() {
     Serial.begin(115200);
     while (!Serial) {}
+    Serial.println(F("Ready!")); Serial.println();
 }
 
 /**

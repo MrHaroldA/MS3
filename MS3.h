@@ -294,7 +294,7 @@ class MS3 : public USBH_MIDI {
 
                 if (queue[queueReadPointer].answer) {
                     while ((reponse = MS3::receive(parameter, dataOut)) == NO_DATA_RECEIVED && lastSend + RESPONSE_TIMEOUT_MSEC > millis()) {
-                        MS3_DEBUGLN(F("*** Waiting for an answer"));
+                        // MS3_DEBUGLN(F("*** Waiting for an answer"));
                     }
                     if (reponse == NO_DATA_RECEIVED) {
                         MS3_DEBUGLN(F("*** Time-out reached."));
