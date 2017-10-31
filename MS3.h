@@ -47,7 +47,6 @@
 const uint8_t INIT_DELAY_MSEC = 60;
 const uint8_t SEND_DELAY_MSEC = 4;
 const uint8_t RESPONSE_TIMEOUT_MSEC = 200;
-const uint8_t QUEUE_SIZE = 20;
 
 // Return values.
 const uint8_t NO_DATA_RECEIVED = 0;
@@ -63,24 +62,17 @@ const uint8_t HEADER[6] = {0x41, 0x00, 0x00, 0x00, 0x00, 0x3B};
 const uint8_t HANDSHAKE[15] = {0xF0, 0x7E, 0x00, 0x06, 0x02, 0x41, 0x3B, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7};
 const uint32_t P_EDIT = 0x7F000001;
 
+// Load the Queue class.
+const uint8_t QUEUE_SIZE = 20;
+#include "Queue.h"
+Queue Queue;
+
 class MS3 : public USBH_MIDI {
     private:
         USB Usb;
         uint8_t lastState;
         bool ready = false;
-
-        // Queue definitions.
-        typedef struct {
-            uint32_t address;
-            uint8_t data;
-            uint8_t dataLength;
-            uint8_t operation;
-            bool answer;
-        } queueData;
         uint32_t lastSend = 0;
-        queueData queue[QUEUE_SIZE];
-        uint8_t queueReadPointer = 0;
-        uint8_t queueWritePointer = 0;
 
         /**
          * The last bit of the data sent to the MS-3 contains a checkum of the parameter and data.
@@ -276,23 +268,24 @@ class MS3 : public USBH_MIDI {
         }
 
         int8_t handleQueue(uint32_t &parameter, uint8_t *dataOut) {
-            if (queueReadPointer != queueWritePointer && lastSend + SEND_DELAY_MSEC < millis()) {
+            if (!Queue.isEmpty() && lastSend + SEND_DELAY_MSEC < millis()) {
                 int8_t reponse = NO_DATA_RECEIVED;
+                queueItem item = Queue.get();
                 lastSend = millis();
 
-                MS3_DEBUG(F("Handle queue: ")); MS3_DEBUGLN(queueReadPointer);
-
-                uint8_t input[queue[queueReadPointer].dataLength] = {0};
-                input[queue[queueReadPointer].dataLength - 1] = queue[queueReadPointer].data;
+                // Construct the data to send to the MS-3.
+                uint8_t input[item.dataLength] = {0};
+                input[item.dataLength - 1] = item.data;
 
                 MS3::send(
-                    queue[queueReadPointer].address,
+                    item.address,
                     input,
-                    queue[queueReadPointer].dataLength,
-                    queue[queueReadPointer].operation
+                    item.dataLength,
+                    item.operation
                 );
 
-                if (queue[queueReadPointer].answer) {
+                // Do we need to wait for an answer?
+                if (item.answer) {
                     while ((reponse = MS3::receive(parameter, dataOut)) == NO_DATA_RECEIVED && lastSend + RESPONSE_TIMEOUT_MSEC > millis()) {
                         // MS3_DEBUGLN(F("*** Waiting for an answer"));
                     }
@@ -301,13 +294,10 @@ class MS3 : public USBH_MIDI {
                     }
                 }
 
-                queueReadPointer = (queueReadPointer < QUEUE_SIZE - 1) ? queueReadPointer + 1 : 0;
-
                 return reponse;
             }
 
-            // If the queue is empty, check for incoming data.
-            queueReadPointer = queueWritePointer = 0;
+            // Queue is empty, or the time-out hasn't passed yet.
             return MS3::receive(parameter, dataOut);
         }
 
@@ -318,15 +308,7 @@ class MS3 : public USBH_MIDI {
             MS3::set(address, data, 1);
         }
         void set(const uint32_t address, uint8_t data, uint8_t dataLength) {
-            MS3_DEBUG(F("Add to queue: ")); MS3_DEBUGLN(queueWritePointer);
-
-            queue[queueWritePointer].address = address;
-            queue[queueWritePointer].data = data;
-            queue[queueWritePointer].dataLength = dataLength;
-            queue[queueWritePointer].operation = 0x12;
-            queue[queueWritePointer].answer = false;
-
-            queueWritePointer = (queueWritePointer < QUEUE_SIZE - 1) ? queueWritePointer + 1 : 0;
+            Queue.set(address, data, dataLength, 0x12, false);
         }
 
         /**
@@ -335,22 +317,14 @@ class MS3 : public USBH_MIDI {
          * @see MS3::receive()
          */
         void get(const uint32_t address, uint8_t data) {
-            MS3_DEBUG(F("Add to queue: ")); MS3_DEBUGLN(queueWritePointer);
-
-            queue[queueWritePointer].address = address;
-            queue[queueWritePointer].data = data;
-            queue[queueWritePointer].dataLength = 4;
-            queue[queueWritePointer].operation = 0x11;
-            queue[queueWritePointer].answer = true;
-
-            queueWritePointer = (queueWritePointer < QUEUE_SIZE - 1) ? queueWritePointer + 1 : 0;
+            Queue.set(address, data, 4, 0x11, true);
         }
 
         /**
-         * Check if the queue is currently empty.
+         * Return if the queue is currently empty.
          */
         bool queueIsEmpty() {
-            return queueReadPointer == queueWritePointer;
+            return Queue.isEmpty();
         }
 };
 
