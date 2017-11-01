@@ -51,6 +51,8 @@ const uint8_t CHECK_THIS_SIZE = sizeof(CHECK_THIS) / sizeof(CHECK_THIS[0]);
 
 // Some global variables to store effect state and if something changed.
 uint16_t states = 0;
+uint16_t checked = 0;
+uint16_t tries = 0;
 bool changed = false;
 
 /**
@@ -61,9 +63,8 @@ void parseData(uint32_t parameter, uint8_t *data) {
 
         // Refresh all effect states on patch changes.
         case P_PATCH:
-            for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
-                MS3.get(CHECK_THIS[i], 0x01);
-            }
+            Serial.print(F("Loaded patch ")); Serial.print(data[0]); Serial.println(F(". Checking all effect states."));
+            tries = checked = 0;
             break;
 
         // Store the effect state for printing later.
@@ -71,6 +72,7 @@ void parseData(uint32_t parameter, uint8_t *data) {
             for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
                 if (CHECK_THIS[i] == parameter) {
                     bitWrite(states, i, data[0]);
+                    bitSet(checked, i);
 
                     // Mark as changed.
                     changed = true;
@@ -83,7 +85,7 @@ void parseData(uint32_t parameter, uint8_t *data) {
  * Print all effect states.
  */
 void printStatus() {
-    Serial.println();
+    Serial.println(); Serial.print(F("Found all ")); Serial.print(CHECK_THIS_SIZE); Serial.print(F(" effect states in ")); Serial.print(tries); Serial.println(F(" tries."));
 
     char state[4];
     for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
@@ -109,6 +111,19 @@ void printStatus() {
     }
 
     Serial.println();
+}
+
+/**
+ * Helper that checks if we have checked all effect states.
+ */
+bool checkedThemAll() {
+    uint16_t fullCheck = 0;
+
+    for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
+        bitSet(fullCheck, i);
+    }
+
+    return (checked == fullCheck);
 }
 
 /**
@@ -144,8 +159,18 @@ void loop() {
         }
     }
 
+    // Query the MS-3 again if we haven't received all data.
+    if (!checkedThemAll()) {
+        for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
+            if (!bitRead(checked, i)) {
+                MS3.get(CHECK_THIS[i], 0x01);
+                tries++;
+            }
+        }
+    }
+
     // Only print the states if something changed, and the queue is empty.
-    if (changed && MS3.queueIsEmpty()) {
+    else if (changed && MS3.queueIsEmpty()) {
         printStatus();
         changed = false;
     }
