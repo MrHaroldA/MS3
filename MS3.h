@@ -1,15 +1,14 @@
 /**
  * This is a simple library to control the Boss MS-3.
  *
+ * Check README.md or visit https://github.com/MrHaroldA/MS3 for more information.
+ *
  * Debug information:
- * - Define MS3_DEBUG_MODE in your sketch including loading this library.
+ * - Define MS3_DEBUG_MODE in your sketch before including this library.
  *
  * Dependencies
+ * - An Arduino with a USB Host Shield
  * - https://github.com/felis/USB_Host_Shield_2.0
- *
- * @TODO: split into .h and .cpp.
- * @TODO: add more example sketches.
- * @TODO: write documentation.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
