@@ -49,8 +49,6 @@ const uint8_t SEND_DELAY_MSEC = 4;
 const uint8_t RESPONSE_TIMEOUT_MSEC = 200;
 
 // Return values.
-const uint8_t NO_DATA_RECEIVED = 0;
-const uint8_t DATA_RECEIVED = 1;
 const int8_t MS3_NOT_READY = 0;
 const int8_t MS3_READY = 1;
 const int8_t MS3_JUST_READY = 2;
@@ -174,7 +172,7 @@ class MS3 : public USBH_MIDI {
          *
          * @TODO: support different data lengths.
          */
-        uint8_t receive(uint32_t &parameter, uint8_t *dataOut) {
+        bool receive(uint32_t &parameter, uint8_t *dataOut) {
             uint8_t
                 incoming[MIDI_EVENT_PACKET_SIZE] = {0},
                 data[MIDI_EVENT_PACKET_SIZE] = {0},
@@ -185,7 +183,7 @@ class MS3 : public USBH_MIDI {
 
             if (MS3::RecvData(&rcvd, incoming) == 0) {
                 if (rcvd == 0) {
-                    return NO_DATA_RECEIVED;
+                    return false;
                 }
 
                 uint8_t *p = incoming;
@@ -216,10 +214,10 @@ class MS3 : public USBH_MIDI {
                 }
                 dataOut[0] = data[dataLength - 3];
 
-                return DATA_RECEIVED;
+                return true;
             }
 
-            return NO_DATA_RECEIVED;
+            return false;
         }
     public:
 
@@ -268,15 +266,17 @@ class MS3 : public USBH_MIDI {
         }
 
         int8_t handleQueue(uint32_t &parameter, uint8_t *dataOut) {
-            if (!Queue.isEmpty() && lastSend + SEND_DELAY_MSEC < millis()) {
-                int8_t reponse = NO_DATA_RECEIVED;
-                queueItem item = Queue.get();
+            queueItem item;
+
+            if (Queue.get(item) && lastSend + SEND_DELAY_MSEC < millis()) {
+                int8_t reponse = false;
                 lastSend = millis();
 
                 // Construct the data to send to the MS-3.
                 uint8_t input[item.dataLength] = {0};
                 input[item.dataLength - 1] = item.data;
 
+                // Send the queue item to the MS-3.
                 MS3::send(
                     item.address,
                     input,
@@ -286,10 +286,10 @@ class MS3 : public USBH_MIDI {
 
                 // Do we need to wait for an answer?
                 if (item.answer) {
-                    while ((reponse = MS3::receive(parameter, dataOut)) == NO_DATA_RECEIVED && lastSend + RESPONSE_TIMEOUT_MSEC > millis()) {
+                    while ((reponse = MS3::receive(parameter, dataOut)) == false && lastSend + RESPONSE_TIMEOUT_MSEC > millis()) {
                         // MS3_DEBUGLN(F("*** Waiting for an answer"));
                     }
-                    if (reponse == NO_DATA_RECEIVED) {
+                    if (reponse == false) {
                         MS3_DEBUGLN(F("*** Time-out reached."));
                     }
                 }

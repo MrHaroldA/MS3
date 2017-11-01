@@ -23,17 +23,18 @@ class Queue {
         /**
          * Get the current queue item. This always returns an item, even when the queue is considered empty.
          */
-        queueItem get() {
-            MS3_DEBUG(F("Handle queue: ")); MS3_DEBUGLN(readPointer);
-
-            uint8_t oldQueueReadPointer = readPointer;
-
-            // Only move the pointer to the next item if the queue isn't empty.
-            if (!isEmpty()) {
-                readPointer = (readPointer < QUEUE_SIZE - 1) ? readPointer + 1 : 0;
+        bool get(queueItem &item) {
+            if (Queue::isEmpty()) {
+                return false;
             }
 
-            return queue[oldQueueReadPointer];
+            MS3_DEBUG(F("Handle queue: ")); MS3_DEBUGLN(readPointer);
+
+            item = queue[readPointer];
+
+            readPointer = (readPointer < QUEUE_SIZE - 1) ? readPointer + 1 : 0;
+
+            return true;
         }
 
         /**

@@ -70,7 +70,7 @@ void loop() {
         uint8_t data[1];
 
         // Check for incoming data.
-        if (MS3.handleQueue(parameter, data) == DATA_RECEIVED) {
+        if (MS3.handleQueue(parameter, data)) {
             parseData(parameter, data);
         }
     }
