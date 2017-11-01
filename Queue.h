@@ -48,7 +48,7 @@ class Queue {
             queue[writePointer].address = address;
             queue[writePointer].data = data;
             queue[writePointer].dataLength = dataLength;
-            queue[writePointer].operation = 0x12;
+            queue[writePointer].operation = operation;
             queue[writePointer].answer = answer;
 
             writePointer = (writePointer < QUEUE_SIZE - 1) ? writePointer + 1 : 0;

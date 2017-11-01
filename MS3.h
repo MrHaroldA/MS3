@@ -44,7 +44,7 @@
 
 // General configuration.
 const uint8_t INIT_DELAY_MSEC = 60;
-const uint8_t SEND_DELAY_MSEC = 4;
+const uint8_t SEND_INTERVAL_MSEC = 4;
 const uint8_t RESPONSE_TIMEOUT_MSEC = 200;
 
 // Return values.
@@ -241,9 +241,9 @@ class MS3 : public USBH_MIDI {
 
                     // Init the editor mode.
                     MS3::send((uint8_t *)HANDSHAKE);
-                    delay(SEND_DELAY_MSEC);
+                    delay(SEND_INTERVAL_MSEC);
                     MS3::send((uint8_t *)HANDSHAKE);
-                    delay(SEND_DELAY_MSEC);
+                    delay(SEND_INTERVAL_MSEC);
                     uint8_t data[1] = {0x01};
                     MS3::send(P_EDIT, data, 1, 0x12);
                     delay(INIT_DELAY_MSEC);
@@ -264,10 +264,16 @@ class MS3 : public USBH_MIDI {
             return MS3_NOT_READY;
         }
 
-        int8_t handleQueue(uint32_t &parameter, uint8_t *data) {
-            queueItem item;
+        bool update(uint32_t &parameter, uint8_t *data) {
 
-            if (Queue.get(item) && lastSend + SEND_DELAY_MSEC < millis()) {
+            // Is there data waiting to be picked up?
+            if (MS3::receive(parameter, data)) {
+                return true;
+            }
+
+            // Check if we need to send out a queued item.
+            queueItem item;
+            if (Queue.get(item) && lastSend + SEND_INTERVAL_MSEC < millis()) {
                 int8_t reponse = false;
                 lastSend = millis();
 
@@ -296,8 +302,8 @@ class MS3 : public USBH_MIDI {
                 return reponse;
             }
 
-            // Queue is empty, or the time-out hasn't passed yet.
-            return MS3::receive(parameter, data);
+            // Nothing happened.
+            return false;
         }
 
         /**
