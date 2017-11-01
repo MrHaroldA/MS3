@@ -264,7 +264,7 @@ class MS3 : public USBH_MIDI {
             return MS3_NOT_READY;
         }
 
-        int8_t handleQueue(uint32_t &parameter, uint8_t *dataOut) {
+        int8_t handleQueue(uint32_t &parameter, uint8_t *data) {
             queueItem item;
 
             if (Queue.get(item) && lastSend + SEND_DELAY_MSEC < millis()) {
@@ -285,7 +285,7 @@ class MS3 : public USBH_MIDI {
 
                 // Do we need to wait for an answer?
                 if (item.answer) {
-                    while ((reponse = MS3::receive(parameter, dataOut)) == false && lastSend + RESPONSE_TIMEOUT_MSEC > millis()) {
+                    while (lastSend + RESPONSE_TIMEOUT_MSEC > millis() && (reponse = MS3::receive(parameter, data)) == false) {
                         // MS3_DEBUGLN(F("*** Waiting for an answer"));
                     }
                     if (reponse == false) {
@@ -297,7 +297,7 @@ class MS3 : public USBH_MIDI {
             }
 
             // Queue is empty, or the time-out hasn't passed yet.
-            return MS3::receive(parameter, dataOut);
+            return MS3::receive(parameter, data);
         }
 
         /**
