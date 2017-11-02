@@ -264,6 +264,10 @@ class MS3 : public USBH_MIDI {
             return MS3_NOT_READY;
         }
 
+        /**
+         * This is the main function for both receiving and sending data when
+         * there's nothing to receive.
+         */
         bool update(uint32_t &parameter, uint8_t *data) {
 
             // Is there data waiting to be picked up?
@@ -274,7 +278,7 @@ class MS3 : public USBH_MIDI {
             // Check if we need to send out a queued item.
             queueItem item;
             if (lastSend + SEND_INTERVAL_MSEC < millis() && Queue.get(item)) {
-                int8_t reponse = false;
+                bool reponse = false;
 
                 // Construct the data to send to the MS-3.
                 uint8_t input[item.dataLength] = {0};
