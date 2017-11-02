@@ -275,7 +275,6 @@ class MS3 : public USBH_MIDI {
             queueItem item;
             if (lastSend + SEND_INTERVAL_MSEC < millis() && Queue.get(item)) {
                 int8_t reponse = false;
-                lastSend = millis();
 
                 // Construct the data to send to the MS-3.
                 uint8_t input[item.dataLength] = {0};
@@ -291,6 +290,7 @@ class MS3 : public USBH_MIDI {
 
                 // Do we need to wait for an answer?
                 if (item.answer) {
+                    lastSend = millis();
                     while (lastSend + RESPONSE_TIMEOUT_MSEC > millis() && (reponse = MS3::receive(parameter, data)) == false) {
                         // MS3_DEBUGLN(F("*** Waiting for an answer"));
                     }
@@ -299,6 +299,7 @@ class MS3 : public USBH_MIDI {
                     }
                 }
 
+                lastSend = millis();
                 return reponse;
             }
 
