@@ -273,7 +273,7 @@ class MS3 : public USBH_MIDI {
 
             // Check if we need to send out a queued item.
             queueItem item;
-            if (Queue.get(item) && lastSend + SEND_INTERVAL_MSEC < millis()) {
+            if (lastSend + SEND_INTERVAL_MSEC < millis() && Queue.get(item)) {
                 int8_t reponse = false;
                 lastSend = millis();
 
