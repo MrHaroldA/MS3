@@ -162,7 +162,7 @@ void loop() {
     }
 
     // Query the MS-3 again if we haven't received all data.
-    if (started && !checkedThemAll()) {
+    if (started && !checkedThemAll() && MS3.queueIsEmpty()) {
         for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
             if (!bitRead(checked, i)) {
                 MS3.get(CHECK_THIS[i], 0x01);
