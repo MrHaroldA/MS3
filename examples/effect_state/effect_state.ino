@@ -65,7 +65,7 @@ void parseData(uint32_t parameter, uint8_t *data) {
         case P_PATCH:
             Serial.print(F("Loaded patch ")); Serial.print(data[0]); Serial.println(F("."));
             for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
-                MS3.get(CHECK_THIS[i], 0x01);
+                MS3.read(CHECK_THIS[i], 0x01);
             }
             timerStart = millis();
             break;
@@ -169,7 +169,8 @@ void loop() {
 
         // Fetch the current active patch on the MS-3.
         if (state == MS3_JUST_READY) {
-            MS3.get(P_PATCH, 0x02);
+            MS3.begin();
+            MS3.read(P_PATCH, 0x02);
         }
 
         // The MS-3 library stores the parameter and data in these variables.

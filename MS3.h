@@ -235,6 +235,20 @@ class MS3 : public USBH_MIDI {
         }
 
         /**
+         * Init the editor mode.
+         */
+        void begin() {
+            MS3::send((uint8_t *)HANDSHAKE);
+            delay(MS3_WRITE_INTERVAL_MSEC);
+            MS3::send((uint8_t *)HANDSHAKE);
+            delay(MS3_WRITE_INTERVAL_MSEC);
+            uint8_t data[1] = {0x01};
+            MS3::send(P_EDIT, data, 1, MS3_WRITE);
+            delay(INIT_DELAY_MSEC);
+            MS3_DEBUGLN(F("*** Up and ready!"));
+        }
+
+        /**
          * Check if the USB layer is ready, and optionally initialize the MS-3
          * and set it to Editor mode.
          */
@@ -242,19 +256,7 @@ class MS3 : public USBH_MIDI {
             Usb.Task();
             if (Usb.getUsbTaskState() == USB_STATE_RUNNING) {
                 if (!MS3::ready) {
-
-                    // Init the editor mode.
-                    MS3::send((uint8_t *)HANDSHAKE);
-                    delay(MS3_WRITE_INTERVAL_MSEC);
-                    MS3::send((uint8_t *)HANDSHAKE);
-                    delay(MS3_WRITE_INTERVAL_MSEC);
-                    uint8_t data[1] = {0x01};
-                    MS3::send(P_EDIT, data, 1, MS3_WRITE);
-                    delay(INIT_DELAY_MSEC);
-
                     MS3::ready = true;
-                    MS3_DEBUGLN(F("*** Up and ready!"));
-
                     return MS3_JUST_READY;
                 }
 
@@ -308,19 +310,17 @@ class MS3 : public USBH_MIDI {
         /**
          * Set this single byte parameter on the MS-3.
          */
-        void set(const uint32_t address, uint8_t data) {
+        void write(const uint32_t address, uint8_t data) {
             Queue.set(address, data, 1, MS3_WRITE);
         }
-        void set(const uint32_t address, uint8_t data, uint8_t dataLength) {
+        void write(const uint32_t address, uint8_t data, uint8_t dataLength) {
             Queue.set(address, data, dataLength, MS3_WRITE);
         }
 
         /**
          * Tell the MS-3 to send us the value of this paramater.
-         *
-         * @see MS3::receive()
          */
-        void get(const uint32_t address, uint8_t data) {
+        void read(const uint32_t address, uint8_t data) {
             Queue.set(address, data, 4, MS3_READ);
         }
 

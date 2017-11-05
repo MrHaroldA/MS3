@@ -29,7 +29,7 @@ void parseData(uint32_t parameter, uint8_t *data) {
             // Slowly go back to patch 0.
             if (data[0] > 0) {
                 delay(750);
-                MS3.set(P_PATCH, data[0] - 1, 2);
+                MS3.write(P_PATCH, data[0] - 1, 2);
             }
             else {
                 Serial.println(F("Back at zero!"));
@@ -62,7 +62,8 @@ void loop() {
 
         // Fetch the current active patch on the MS-3.
         if (state == MS3_JUST_READY) {
-            MS3.get(P_PATCH, 0x02);
+            MS3.begin();
+            MS3.read(P_PATCH, 0x02);
         }
 
         // Store the received parameter and data in these variables.
