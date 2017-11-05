@@ -52,9 +52,8 @@ const uint8_t CHECK_THIS_SIZE = sizeof(CHECK_THIS) / sizeof(CHECK_THIS[0]);
 // Some global variables to store effect state and if something changed.
 uint16_t states = 0;
 uint16_t checked = 0;
-uint16_t tries = 0;
-bool changed = false;
-bool started = false;
+uint16_t changed = 0;
+uint32_t timerStart = 0;
 
 /**
  * Incoming data handler.
@@ -64,9 +63,11 @@ void parseData(uint32_t parameter, uint8_t *data) {
 
         // Refresh all effect states on patch changes.
         case P_PATCH:
-            Serial.print(F("Loaded patch ")); Serial.print(data[0]); Serial.print(F(". "));
-            tries = checked = 0;
-            started = true;
+            Serial.print(F("Loaded patch ")); Serial.print(data[0]); Serial.println(F("."));
+            for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
+                MS3.get(CHECK_THIS[i], 0x01);
+            }
+            timerStart = millis();
             break;
 
         // Store the effect state for printing later.
@@ -75,9 +76,8 @@ void parseData(uint32_t parameter, uint8_t *data) {
                 if (CHECK_THIS[i] == parameter) {
                     bitWrite(states, i, data[0]);
                     bitSet(checked, i);
-
-                    // Mark as changed.
                     changed = true;
+                    break;
                 }
             }
     }
@@ -86,12 +86,30 @@ void parseData(uint32_t parameter, uint8_t *data) {
 /**
  * Print all effect states.
  */
-void printStatus() {
-    Serial.print(F("Found all ")); Serial.print(CHECK_THIS_SIZE); Serial.print(F(" effect states in ")); Serial.print(tries); Serial.println(F(" tries."));
+void printStatus(uint32_t timerStop) {
 
-    char state[4];
+    uint8_t dataReceived = 0;
     for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
-        strcpy(state, (bitRead(states, i) ? "ON" : "OFF"));
+        if (bitRead(checked, i)) {
+            dataReceived++;
+        }
+    }
+
+    Serial.println();
+    Serial.print(F("Received ")); Serial.print(dataReceived); Serial.print(F("/")); Serial.print(CHECK_THIS_SIZE);
+    Serial.print(F(" effect states in ")); Serial.print(F(" in ")); Serial.print(timerStop - timerStart); Serial.println(F("ms."));
+    Serial.println();
+
+    char state[8];
+    for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
+
+        // Did we receive this parameter?
+        if (!bitRead(checked, i)) {
+            strcpy(state, "UNKNOWN");
+        }
+        else {
+            strcpy(state, (bitRead(states, i) ? "ON" : "OFF"));
+        }
 
         switch (CHECK_THIS[i]) {
             case P_FX1:  Serial.print(F("FX1:  ")); Serial.println(state); break;
@@ -111,8 +129,10 @@ void printStatus() {
             default: Serial.print(CHECK_THIS[i]); Serial.print(F(": ")); Serial.println(state);
         }
     }
-
     Serial.println();
+
+    // Reset the checked variables.
+    checked = 0;
 }
 
 /**
@@ -142,6 +162,7 @@ void setup() {
  */
 void loop() {
     int8_t state;
+    static uint32_t timerStop = 0;
 
     // Check if the MS-3 is listening.
     if ((state = MS3.isReady()) != MS3_NOT_READY) {
@@ -152,8 +173,8 @@ void loop() {
         }
 
         // The MS-3 library stores the parameter and data in these variables.
-        uint32_t parameter;
-        uint8_t data[1];
+        uint32_t parameter = 0;
+        uint8_t data[1] = {0};
 
         // Check for incoming data.
         if (MS3.update(parameter, data)) {
@@ -161,19 +182,15 @@ void loop() {
         }
     }
 
-    // Query the MS-3 again if we haven't received all data.
-    if (started && !checkedThemAll() && MS3.queueIsEmpty()) {
-        for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
-            if (!bitRead(checked, i)) {
-                MS3.get(CHECK_THIS[i], 0x01);
-                tries++;
-            }
-        }
+    // Wait until the last request is received.
+    if (changed && !timerStop && MS3.queueIsEmpty()) {
+        timerStop = millis();
     }
 
-    // Only print the states if something changed, and the queue is empty.
-    else if (changed && MS3.queueIsEmpty()) {
-        printStatus();
+    // When we're done waiting, print the result.
+    if (changed && timerStop && timerStop + (MS3_WRITE_INTERVAL_MSEC * 2) < millis()) {
+        printStatus(timerStop);
         changed = false;
+        timerStop = 0;
     }
 }
