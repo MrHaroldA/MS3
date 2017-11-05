@@ -136,19 +136,6 @@ void printStatus(uint32_t timerStop) {
 }
 
 /**
- * Helper that checks if we have checked all effect states.
- */
-bool checkedThemAll() {
-    uint16_t fullCheck = 0;
-
-    for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
-        bitSet(fullCheck, i);
-    }
-
-    return (checked == fullCheck);
-}
-
-/**
  * Setup routine.
  */
 void setup() {
