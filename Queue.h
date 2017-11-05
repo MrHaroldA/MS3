@@ -9,7 +9,6 @@ typedef struct {
     uint8_t data;
     uint8_t dataLength;
     uint8_t operation;
-    bool answer;
 } queueItem;
 
 class Queue {
@@ -42,14 +41,13 @@ class Queue {
          *
          * @TODO: add protection against overwriting items.
          */
-        void set(uint32_t address, uint8_t data, uint8_t dataLength, uint8_t operation, bool answer) {
+        void set(uint32_t address, uint8_t data, uint8_t dataLength, uint8_t operation) {
             MS3_DEBUG(F("Add to queue: ")); MS3_DEBUGLN(writePointer);
 
             queue[writePointer].address = address;
             queue[writePointer].data = data;
             queue[writePointer].dataLength = dataLength;
             queue[writePointer].operation = operation;
-            queue[writePointer].answer = answer;
 
             writePointer = (writePointer < QUEUE_SIZE - 1) ? writePointer + 1 : 0;
         }
@@ -59,7 +57,6 @@ class Queue {
          */
         bool isEmpty() {
             if (readPointer == writePointer) {
-                readPointer = writePointer = 0;
                 return true;
             }
 

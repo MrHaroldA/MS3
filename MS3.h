@@ -43,9 +43,12 @@
 #endif
 
 // General configuration.
-const uint8_t INIT_DELAY_MSEC = 60;
-const uint8_t SEND_INTERVAL_MSEC = 4;
-const uint8_t RESPONSE_TIMEOUT_MSEC = 200;
+const uint16_t INIT_DELAY_MSEC = 60;
+const uint8_t MS3_WRITE = 0x12;
+const uint8_t MS3_READ = 0x11;
+const uint8_t MS3_WRITE_INTERVAL_MSEC = 10;
+const uint8_t MS3_READ_INTERVAL_MSEC = 25;
+const uint8_t MS3_RECEIVE_INTERVAL_MSEC = 0;
 
 // Return values.
 const int8_t MS3_NOT_READY = 0;
@@ -70,6 +73,7 @@ class MS3 : public USBH_MIDI {
         uint8_t lastState;
         bool ready = false;
         uint32_t lastSend = 0;
+        uint32_t nextMessage = 0;
 
         /**
          * The last bit of the data sent to the MS-3 contains a checkum of the parameter and data.
@@ -241,11 +245,11 @@ class MS3 : public USBH_MIDI {
 
                     // Init the editor mode.
                     MS3::send((uint8_t *)HANDSHAKE);
-                    delay(SEND_INTERVAL_MSEC);
+                    delay(MS3_WRITE_INTERVAL_MSEC);
                     MS3::send((uint8_t *)HANDSHAKE);
-                    delay(SEND_INTERVAL_MSEC);
+                    delay(MS3_WRITE_INTERVAL_MSEC);
                     uint8_t data[1] = {0x01};
-                    MS3::send(P_EDIT, data, 1, 0x12);
+                    MS3::send(P_EDIT, data, 1, MS3_WRITE);
                     delay(INIT_DELAY_MSEC);
 
                     MS3::ready = true;
@@ -272,12 +276,13 @@ class MS3 : public USBH_MIDI {
 
             // Is there data waiting to be picked up?
             if (MS3::receive(parameter, data)) {
+                MS3::nextMessage = (MS3_RECEIVE_INTERVAL_MSEC) ? millis() + MS3_RECEIVE_INTERVAL_MSEC : 0;
                 return true;
             }
 
             // Check if we need to send out a queued item.
             queueItem item;
-            if (lastSend + SEND_INTERVAL_MSEC < millis() && Queue.get(item)) {
+            if (MS3::nextMessage <= millis() && Queue.get(item)) {
                 bool reponse = false;
 
                 // Construct the data to send to the MS-3.
@@ -292,18 +297,7 @@ class MS3 : public USBH_MIDI {
                     item.operation
                 );
 
-                // Do we need to wait for an answer?
-                if (item.answer) {
-                    lastSend = millis();
-                    while (lastSend + RESPONSE_TIMEOUT_MSEC > millis() && (reponse = MS3::receive(parameter, data)) == false) {
-                        // MS3_DEBUGLN(F("*** Waiting for an answer"));
-                    }
-                    if (reponse == false) {
-                        MS3_DEBUGLN(F("*** Time-out reached."));
-                    }
-                }
-
-                lastSend = millis();
+                MS3::nextMessage = millis() + (item.operation == MS3_READ ? MS3_READ_INTERVAL_MSEC : MS3_WRITE_INTERVAL_MSEC);
                 return reponse;
             }
 
@@ -315,10 +309,10 @@ class MS3 : public USBH_MIDI {
          * Set this single byte parameter on the MS-3.
          */
         void set(const uint32_t address, uint8_t data) {
-            MS3::set(address, data, 1);
+            Queue.set(address, data, 1, MS3_WRITE);
         }
         void set(const uint32_t address, uint8_t data, uint8_t dataLength) {
-            Queue.set(address, data, dataLength, 0x12, false);
+            Queue.set(address, data, dataLength, MS3_WRITE);
         }
 
         /**
@@ -327,7 +321,7 @@ class MS3 : public USBH_MIDI {
          * @see MS3::receive()
          */
         void get(const uint32_t address, uint8_t data) {
-            Queue.set(address, data, 4, 0x11, true);
+            Queue.set(address, data, 4, MS3_READ);
         }
 
         /**
