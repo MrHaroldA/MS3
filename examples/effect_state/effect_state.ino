@@ -97,7 +97,7 @@ void printStatus(uint32_t timerStop) {
 
     Serial.println();
     Serial.print(F("Received ")); Serial.print(dataReceived); Serial.print(F("/")); Serial.print(CHECK_THIS_SIZE);
-    Serial.print(F(" effect states in ")); Serial.print(F(" in ")); Serial.print(timerStop - timerStart); Serial.println(F("ms."));
+    Serial.print(F(" effect states in ")); Serial.print(timerStop - timerStart); Serial.println(F("ms."));
     Serial.println();
 
     char state[8];
