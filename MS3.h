@@ -37,7 +37,7 @@
  * MS3_QUEUE_SIZE: The maximum number of items in the send queue.
  */
 #ifndef MS3_WRITE_INTERVAL_MSEC
-const uint8_t MS3_WRITE_INTERVAL_MSEC = 0;
+const uint8_t MS3_WRITE_INTERVAL_MSEC = 4;
 #endif
 
 #ifndef MS3_READ_INTERVAL_MSEC
@@ -76,7 +76,7 @@ const uint8_t MS3_QUEUE_SIZE = 20;
 #endif
 
 // General configuration.
-const uint16_t INIT_DELAY_MSEC = 60;
+const uint16_t INIT_DELAY_MSEC = 100;
 const uint8_t MS3_WRITE = 0x12;
 const uint8_t MS3_READ = 0x11;
 
