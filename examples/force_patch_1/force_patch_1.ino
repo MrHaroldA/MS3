@@ -55,24 +55,22 @@ void setup() {
  * Main loop.
  */
 void loop() {
-    int8_t state;
 
-    // Check if the MS-3 is listening.
-    if ((state = MS3.isReady()) != MS3_NOT_READY) {
+    // Check for incoming data or send a queued item.
+    uint32_t parameter = 0;
+    uint8_t data[1] = {};
+    switch (MS3.update(parameter, data)) {
 
         // Fetch the current active patch on the MS-3.
-        if (state == MS3_JUST_READY) {
+        case MS3_JUST_READY:
             MS3.begin();
             MS3.read(P_PATCH, 0x02);
-        }
+            break;
 
-        // Store the received parameter and data in these variables.
-        uint32_t parameter;
-        uint8_t data[1];
-
-        // Check for incoming data.
-        if (MS3.update(parameter, data)) {
+        // Parse the incoming data.
+        case MS3_DATA_RECEIVED:
             parseData(parameter, data);
-        }
+            break;
+
     }
 }

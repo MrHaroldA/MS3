@@ -59,10 +59,6 @@ const uint8_t MS3_QUEUE_SIZE = 20;
 /**
  * The configuration options below are internal and should not be changed.
  */
-#include "Arduino.h"
-#include "usbh_midi.h"
-#include "Queue.h"
-
 #ifndef MS3_DEBUG
     #ifdef MS3_DEBUG_MODE
         #define MS3_DEBUG(x) Serial.print(x)
@@ -75,6 +71,10 @@ const uint8_t MS3_QUEUE_SIZE = 20;
     #endif
 #endif
 
+#include "Arduino.h"
+#include "usbh_midi.h"
+#include "Queue.h"
+
 // General configuration.
 const uint16_t INIT_DELAY_MSEC = 100;
 const uint8_t MS3_WRITE = 0x12;
@@ -84,6 +84,9 @@ const uint8_t MS3_READ = 0x11;
 const int8_t MS3_NOT_READY = 0;
 const int8_t MS3_READY = 1;
 const int8_t MS3_JUST_READY = 2;
+const int8_t MS3_DATA_SENT = 3;
+const int8_t MS3_DATA_RECEIVED = 4;
+const int8_t MS3_NOTHING_HAPPENED = 5;
 
 // Fixed data.
 const uint8_t SYSEX_START = 0xF0;
@@ -220,6 +223,29 @@ class MS3 : public USBH_MIDI {
             return false;
         }
 
+        /**
+         * Check if the USB layer is ready.
+         */
+        uint8_t isReady() {
+            Usb.Task();
+            if (Usb.getUsbTaskState() == USB_STATE_RUNNING) {
+                if (!MS3::ready) {
+                    MS3::ready = true;
+                    return MS3_JUST_READY;
+                }
+
+                return MS3_READY;
+            }
+            else if (MS3::lastState != Usb.getUsbTaskState()) {
+                MS3_DEBUG(F("*** USB task state: "));
+                MS3_DEBUG_AS(MS3::lastState = Usb.getUsbTaskState(), HEX);
+                MS3_DEBUGLN();
+                MS3::ready = false;
+            }
+
+            return MS3_NOT_READY;
+        }
+
     public:
 
         /**
@@ -247,45 +273,28 @@ class MS3 : public USBH_MIDI {
         }
 
         /**
-         * Check if the USB layer is ready, and optionally initialize the MS-3
-         * and set it to Editor mode.
-         */
-        uint8_t isReady() {
-            Usb.Task();
-            if (Usb.getUsbTaskState() == USB_STATE_RUNNING) {
-                if (!MS3::ready) {
-                    MS3::ready = true;
-                    return MS3_JUST_READY;
-                }
-
-                return MS3_READY;
-            }
-            else if (MS3::lastState != Usb.getUsbTaskState()) {
-                MS3_DEBUG(F("*** USB task state: "));
-                MS3_DEBUG_AS(MS3::lastState = Usb.getUsbTaskState(), HEX);
-                MS3_DEBUGLN();
-                MS3::ready = false;
-            }
-
-            return MS3_NOT_READY;
-        }
-
-        /**
          * This is the main function for both receiving and sending data when
          * there's nothing to receive.
          */
-        bool update(uint32_t &parameter, uint8_t *data) {
+        uint8_t update(uint32_t &parameter, uint8_t *data) {
+
+            // Are we ready?
+            switch (MS3::isReady()) {
+                case MS3_NOT_READY:
+                    return MS3_NOT_READY;
+                case MS3_JUST_READY:
+                    return MS3_JUST_READY;
+            }
 
             // Is there data waiting to be picked up?
             if (MS3::receive(parameter, data)) {
                 MS3::nextMessage = millis() + MS3_RECEIVE_INTERVAL_MSEC;
-                return true;
+                return MS3_DATA_RECEIVED;
             }
 
             // Check if we need to send out a queued item.
             queueItem item = {};
             if (MS3::nextMessage <= millis() && Queue.read(item)) {
-                bool reponse = false;
 
                 // Construct the data to send to the MS-3.
                 uint8_t input[item.dataLength] = {0};
@@ -299,12 +308,13 @@ class MS3 : public USBH_MIDI {
                     item.operation
                 );
 
+                // Store when the next message may be sent.
                 MS3::nextMessage = millis() + (item.operation == MS3_READ ? MS3_READ_INTERVAL_MSEC : MS3_WRITE_INTERVAL_MSEC);
-                return reponse;
+                return MS3_DATA_SENT;
             }
 
-            // Nothing happened.
-            return false;
+            // Nothing interesting happened.
+            return MS3_NOTHING_HAPPENED;
         }
 
         /**

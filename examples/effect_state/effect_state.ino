@@ -63,6 +63,8 @@ void parseData(uint32_t parameter, uint8_t *data) {
 
         // Refresh all effect states on patch changes.
         case P_PATCH:
+            checked = 0;
+
             Serial.print(F("Loaded patch ")); Serial.print(data[0]); Serial.println(F("."));
             for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
                 MS3.read(CHECK_THIS[i], 0x01);
@@ -86,7 +88,7 @@ void parseData(uint32_t parameter, uint8_t *data) {
 /**
  * Print all effect states.
  */
-void printStatus(uint32_t timerStop) {
+void printStatus(uint32_t duration) {
 
     uint8_t dataReceived = 0;
     for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
@@ -97,7 +99,7 @@ void printStatus(uint32_t timerStop) {
 
     Serial.println();
     Serial.print(F("Received ")); Serial.print(dataReceived); Serial.print(F("/")); Serial.print(CHECK_THIS_SIZE);
-    Serial.print(F(" effect states in ")); Serial.print(timerStop - timerStart); Serial.println(F("ms."));
+    Serial.print(F(" effect states in ")); Serial.print(duration); Serial.println(F("ms."));
     Serial.println();
 
     char state[8];
@@ -130,9 +132,6 @@ void printStatus(uint32_t timerStop) {
         }
     }
     Serial.println();
-
-    // Reset the checked variables.
-    checked = 0;
 }
 
 /**
@@ -148,26 +147,25 @@ void setup() {
  * Main loop.
  */
 void loop() {
-    int8_t state;
     static uint32_t timerStop = 0;
 
-    // Check if the MS-3 is listening.
-    if ((state = MS3.isReady()) != MS3_NOT_READY) {
+    // The MS-3 library stores the parameter and data in these variables.
+    uint32_t parameter = 0;
+    uint8_t data[1] = {};
+
+    // Check for incoming data or send a queued item.
+    switch (MS3.update(parameter, data)) {
 
         // Fetch the current active patch on the MS-3.
-        if (state == MS3_JUST_READY) {
+        case MS3_JUST_READY:
             MS3.begin();
             MS3.read(P_PATCH, 0x02);
-        }
+            break;
 
-        // The MS-3 library stores the parameter and data in these variables.
-        uint32_t parameter = 0;
-        uint8_t data[1] = {0};
-
-        // Check for incoming data.
-        if (MS3.update(parameter, data)) {
+        // Parse the incoming data.
+        case MS3_DATA_RECEIVED:
             parseData(parameter, data);
-        }
+            break;
     }
 
     // Wait until the last request is received.
@@ -175,9 +173,9 @@ void loop() {
         timerStop = millis();
     }
 
-    // When we're done waiting, print the result.
-    if (changed && timerStop && timerStop + (MS3_WRITE_INTERVAL_MSEC * 2) < millis()) {
-        printStatus(timerStop);
+    // When we're done waiting for the last reply, print the result.
+    else if (changed && timerStop && timerStop + MS3_READ_INTERVAL_MSEC < millis()) {
+        printStatus(timerStop - timerStart);
         changed = false;
         timerStop = 0;
     }
