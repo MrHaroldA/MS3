@@ -83,13 +83,13 @@ const uint8_t MS3_READ = 0x11;
 
 // Return values.
 const int8_t MS3_NOT_READY = 0;
-const int8_t MS3_READY = 1;
-const int8_t MS3_JUST_READY = 2;
+const int8_t MS3_JUST_READY = 1;
+const int8_t MS3_READY = 2;
 const int8_t MS3_DATA_SENT = 3;
 const int8_t MS3_DATA_RECEIVED = 4;
-const int8_t MS3_ALMOST_IDLE = 5;
-const int8_t MS3_IDLE = 6;
-const int8_t MS3_NOTHING_HAPPENED = 7;
+const int8_t MS3_NOTHING_HAPPENED = 5;
+const int8_t MS3_ALMOST_IDLE = 6;
+const int8_t MS3_IDLE = 7;
 
 // Fixed data.
 const uint8_t SYSEX_START = 0xF0;
@@ -108,7 +108,7 @@ class MS3 : public USBH_MIDI {
         uint32_t nextMessage = 0;
 
         /**
-         * The last bit of the data sent to the MS-3 contains a checkum of the parameter and data.
+         * The last bit of the data sent to the MS-3 contains a checksum of the parameter and data.
          */
         uint8_t checksum(uint8_t *data, uint8_t dataLength) {
             uint8_t sum = 0, i;
