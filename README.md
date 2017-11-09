@@ -16,6 +16,7 @@ If you have an Arduino and USB shield available, check out one of the examples p
 
 I do expect you to have a basic knowledge of the Arduino and C/C++ and you should have checked out both the examples of this library, as well as the examples for the USB Host Shield.
 
+Also check the Wiki for more information: https://github.com/MrHaroldA/MS3/wiki
 
 Cheers!
 
