@@ -27,6 +27,8 @@
 #ifndef MS3_h
 #define MS3_h
 
+#include "Arduino.h"
+
 /**
  * Overridable config.
  *
@@ -71,7 +73,6 @@ const uint8_t MS3_QUEUE_SIZE = 20;
     #endif
 #endif
 
-#include "Arduino.h"
 #include "usbh_midi.h"
 #include "Queue.h"
 
@@ -86,7 +87,9 @@ const int8_t MS3_READY = 1;
 const int8_t MS3_JUST_READY = 2;
 const int8_t MS3_DATA_SENT = 3;
 const int8_t MS3_DATA_RECEIVED = 4;
-const int8_t MS3_NOTHING_HAPPENED = 5;
+const int8_t MS3_ALMOST_IDLE = 5;
+const int8_t MS3_IDLE = 6;
+const int8_t MS3_NOTHING_HAPPENED = 7;
 
 // Fixed data.
 const uint8_t SYSEX_START = 0xF0;
@@ -313,6 +316,11 @@ class MS3 : public USBH_MIDI {
                 return MS3_DATA_SENT;
             }
 
+            // Are we done? Did we wait for the last message to finish?
+            if (Queue.isEmpty()) {
+                return (MS3::nextMessage > millis()) ? MS3_ALMOST_IDLE : MS3_IDLE;
+            }
+
             // Nothing interesting happened.
             return MS3_NOTHING_HAPPENED;
         }
@@ -333,13 +341,6 @@ class MS3 : public USBH_MIDI {
          */
         void read(const uint32_t address, uint8_t data) {
             Queue.write(address, data, 4, MS3_READ);
-        }
-
-        /**
-         * Return if the queue is currently empty.
-         */
-        bool queueIsEmpty() {
-            return Queue.isEmpty();
         }
 };
 

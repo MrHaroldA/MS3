@@ -63,13 +63,12 @@ void parseData(uint32_t parameter, uint8_t *data) {
 
         // Refresh all effect states on patch changes.
         case P_PATCH:
-            checked = 0;
-
             Serial.print(F("Loaded patch ")); Serial.print(data[0]); Serial.println(F("."));
             for (uint8_t i = 0; i < CHECK_THIS_SIZE; i++) {
                 MS3.read(CHECK_THIS[i], 0x01);
             }
             timerStart = millis();
+            checked = 0;
             break;
 
         // Store the effect state for printing later.
@@ -166,17 +165,12 @@ void loop() {
         case MS3_DATA_RECEIVED:
             parseData(parameter, data);
             break;
-    }
 
-    // Wait until the last request is received.
-    if (changed && !timerStop && MS3.queueIsEmpty()) {
-        timerStop = millis();
-    }
-
-    // When we're done waiting for the last reply, print the result.
-    else if (changed && timerStop && timerStop + MS3_READ_INTERVAL_MSEC < millis()) {
-        printStatus(timerStop - timerStart);
-        changed = false;
-        timerStop = 0;
+        // If all communication is done, print the result.
+        case MS3_IDLE:
+            if (changed) {
+                printStatus(millis() - timerStart);
+                changed = false;
+            }
     }
 }
