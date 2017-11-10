@@ -156,7 +156,7 @@ void loop() {
     switch (MS3.update(parameter, data)) {
 
         // Fetch the current active patch on the MS-3.
-        case MS3_JUST_READY:
+        case MS3_READY:
             MS3.begin();
             MS3.read(P_PATCH, 0x02);
             break;

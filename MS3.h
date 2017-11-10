@@ -83,13 +83,12 @@ const uint8_t MS3_READ = 0x11;
 
 // Return values.
 const int8_t MS3_NOT_READY = 0;
-const int8_t MS3_JUST_READY = 1;
-const int8_t MS3_READY = 2;
-const int8_t MS3_DATA_SENT = 3;
-const int8_t MS3_DATA_RECEIVED = 4;
-const int8_t MS3_NOTHING_HAPPENED = 5;
-const int8_t MS3_ALMOST_IDLE = 6;
-const int8_t MS3_IDLE = 7;
+const int8_t MS3_READY = 1;
+const int8_t MS3_DATA_SENT = 2;
+const int8_t MS3_DATA_RECEIVED = 3;
+const int8_t MS3_NOTHING_HAPPENED = 4;
+const int8_t MS3_ALMOST_IDLE = 5;
+const int8_t MS3_IDLE = 6;
 
 // Fixed data.
 const uint8_t SYSEX_START = 0xF0;
@@ -229,15 +228,10 @@ class MS3 : public USBH_MIDI {
         /**
          * Check if the USB layer is ready.
          */
-        uint8_t isReady() {
+        bool isReady() {
             Usb.Task();
             if (Usb.getUsbTaskState() == USB_STATE_RUNNING) {
-                if (!MS3::ready) {
-                    MS3::ready = true;
-                    return MS3_JUST_READY;
-                }
-
-                return MS3_READY;
+                return true;
             }
             else if (MS3::lastState != Usb.getUsbTaskState()) {
                 MS3_DEBUG(F("*** USB task state: "));
@@ -246,7 +240,7 @@ class MS3 : public USBH_MIDI {
                 MS3::ready = false;
             }
 
-            return MS3_NOT_READY;
+            return false;
         }
 
     public:
@@ -282,11 +276,14 @@ class MS3 : public USBH_MIDI {
         uint8_t update(uint32_t &parameter, uint8_t *data) {
 
             // Are we ready?
-            switch (MS3::isReady()) {
-                case MS3_NOT_READY:
-                    return MS3_NOT_READY;
-                case MS3_JUST_READY:
-                    return MS3_JUST_READY;
+            if (MS3::isReady()) {
+                if (!MS3::ready) {
+                    MS3::ready = true;
+                    return MS3_READY;
+                }
+            }
+            else {
+                return MS3_NOT_READY;
             }
 
             // Is there data waiting to be picked up?
