@@ -140,6 +140,7 @@ void setup() {
     Serial.begin(115200);
     while (!Serial) {}
     Serial.println(F("Ready!")); Serial.println();
+    MS3.begin();
 }
 
 /**
@@ -157,7 +158,7 @@ void loop() {
 
         // Fetch the current active patch on the MS-3.
         case MS3_READY:
-            MS3.begin();
+            MS3.setEditorMode();
             MS3.read(P_PATCH, 0x02);
             break;
 

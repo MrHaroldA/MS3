@@ -248,7 +248,12 @@ class MS3 : public USBH_MIDI {
         /**
          * Constructor.
          */
-        MS3() : USBH_MIDI(&Usb) {
+        MS3() : USBH_MIDI(&Usb) {}
+
+        /**
+         * Set up the USB layer.
+         */
+        void begin() {
             if (Usb.Init() == -1) {
                 MS3_DEBUGLN(F("*** USB Init error"));
                 while (true);
@@ -258,7 +263,7 @@ class MS3 : public USBH_MIDI {
         /**
          * Init the editor mode.
          */
-        void begin() {
+        void setEditorMode() {
             MS3::send((uint8_t *) HANDSHAKE);
             delay(MS3_WRITE_INTERVAL_MSEC);
             MS3::send((uint8_t *) HANDSHAKE);
