@@ -253,11 +253,13 @@ class MS3 : public USBH_MIDI {
         /**
          * Set up the USB layer.
          */
-        void begin() {
+        bool begin() {
             if (Usb.Init() == -1) {
-                MS3_DEBUGLN(F("*** USB Init error"));
-                while (true);
+                MS3_DEBUG(F("*** USB init error! ***"));
+                return false;
             }
+
+            return true;
         }
 
         /**
