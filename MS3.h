@@ -330,13 +330,9 @@ class MS3 : public USBH_MIDI {
         }
 
         /**
-         * Set this single byte parameter on the MS-3.
+         * Set this single byte parameter on the MS-3. Optionally pad it with leading zero-bytes with a datalength >= 1.
          */
-        void write(const uint32_t address, uint8_t data) {
-            Queue.write(address, data, 1, MS3_WRITE);
-        }
-
-        void write(const uint32_t address, uint8_t data, uint8_t dataLength) {
+        void write(const uint32_t address, uint8_t data, uint8_t dataLength = 1) {
             Queue.write(address, data, dataLength, MS3_WRITE);
         }
 
