@@ -59,7 +59,7 @@ class Queue {
          */
         void write(uint32_t address, uint8_t data, uint8_t dataLength, uint8_t operation) {
             if (Queue::writePointer == MS3_QUEUE_SIZE) {
-                MS3_DEBUG(F("*** Queue is full! Discarding item 0: 0x"));
+                MS3_DEBUG(F("*** Queue is full! Discarding the first item: 0x"));
                 MS3_DEBUG_AS(Queue::items[0].address, HEX);
                 MS3_DEBUG(F(" / 0x"));
                 MS3_DEBUG_AS(Queue::items[0].operation, HEX);
