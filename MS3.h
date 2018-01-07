@@ -47,7 +47,7 @@ const uint8_t MS3_READ_INTERVAL_MSEC = 25;
 #endif
 
 #ifndef MS3_RECEIVE_INTERVAL_MSEC
-const uint8_t MS3_RECEIVE_INTERVAL_MSEC = 0;
+const uint8_t MS3_RECEIVE_INTERVAL_MSEC = 4;
 #endif
 
 #ifndef MS3_HEADER
