@@ -95,6 +95,15 @@ class Queue {
         bool isEmpty() {
             return (Queue::writePointer == 0);
         }
+
+        /**
+         * Flush the queue.
+         */
+        void flush() {
+            Queue::writePointer = 0;
+
+            MS3_DEBUGLN(F("*** Flushed the queue."));
+        }
 };
 
 #endif

@@ -342,6 +342,15 @@ class MS3 : public USBH_MIDI {
         void read(const uint32_t address, uint8_t data) {
             Queue.write(address, data, 4, MS3_READ);
         }
+
+        /**
+         * Flush the queue if it's not empty.
+         */
+        void flushQueue() {
+            if (!Queue.isEmpty()) {
+                Queue.flush();
+            }
+        }
 };
 
 #endif
