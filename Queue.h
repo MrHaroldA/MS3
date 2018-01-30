@@ -5,7 +5,7 @@
 #include "MS3.h"
 
 typedef struct {
-    uint32_t address;
+    unsigned long address;
     uint8_t data;
     uint8_t dataLength;
     uint8_t operation;
@@ -49,7 +49,7 @@ class Queue {
             MS3_DEBUG_AS(item.operation, HEX);
             MS3_DEBUG(F(" / 0x"));
             MS3_DEBUG_AS(item.data, HEX);
-            MS3_DEBUGLN();
+            MS3_DEBUGLN(F("."));
 
             return true;
         }
@@ -57,7 +57,7 @@ class Queue {
         /**
          * Add an item to the queue.
          */
-        void write(uint32_t address, uint8_t data, uint8_t dataLength, uint8_t operation) {
+        void write(unsigned long address, uint8_t data, uint8_t dataLength, uint8_t operation) {
             if (Queue::writePointer == MS3_QUEUE_SIZE) {
                 MS3_DEBUG(F("*** Queue is full! Discarding the first item: 0x"));
                 MS3_DEBUG_AS(Queue::items[0].address, HEX);
@@ -65,7 +65,7 @@ class Queue {
                 MS3_DEBUG_AS(Queue::items[0].operation, HEX);
                 MS3_DEBUG(F(" / 0x"));
                 MS3_DEBUG_AS(Queue::items[0].data, HEX);
-                MS3_DEBUGLN();
+                MS3_DEBUGLN(F("."));
 
                 // There it goes!
                 Queue::shift();
@@ -79,7 +79,7 @@ class Queue {
             MS3_DEBUG_AS(operation, HEX);
             MS3_DEBUG(F(" / 0x"));
             MS3_DEBUG_AS(data, HEX);
-            MS3_DEBUGLN();
+            MS3_DEBUGLN(F("."));
 
             Queue::items[writePointer].address = address;
             Queue::items[writePointer].data = data;

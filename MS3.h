@@ -61,16 +61,14 @@ const uint8_t MS3_QUEUE_SIZE = 20;
 /**
  * The configuration options below are internal and should not be changed.
  */
-#ifndef MS3_DEBUG
-    #ifdef MS3_DEBUG_MODE
-        #define MS3_DEBUG(x) Serial.print(x)
-        #define MS3_DEBUGLN(x) Serial.println(x)
-        #define MS3_DEBUG_AS(x, y) Serial.print(x, y)
-    #else
-        #define MS3_DEBUG(x)
-        #define MS3_DEBUGLN(x)
-        #define MS3_DEBUG_AS(x, y)
-    #endif
+#ifdef MS3_DEBUG_MODE
+    #define MS3_DEBUG(x) Serial.print(x)
+    #define MS3_DEBUGLN(x) Serial.println(x)
+    #define MS3_DEBUG_AS(x, y) Serial.print(x, y)
+#else
+    #define MS3_DEBUG(x) (void)(x)
+    #define MS3_DEBUGLN(x) (void)(x)
+    #define MS3_DEBUG_AS(x, y) (void)(x)
 #endif
 
 #include "usbh_midi.h"
@@ -94,7 +92,7 @@ const int8_t MS3_IDLE = 6;
 const uint8_t SYSEX_START = 0xF0;
 const uint8_t SYSEX_END = 0xF7;
 const uint8_t HANDSHAKE[15] = {0xF0, 0x7E, 0x00, 0x06, 0x02, 0x41, 0x3B, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7};
-const uint32_t P_EDIT = 0x7F000001;
+const unsigned long P_EDIT = 0x7F000001;
 
 // Load the Queue class.
 Queue Queue;
@@ -104,12 +102,12 @@ class MS3 : public USBH_MIDI {
         USB Usb;
         uint8_t lastState = 0;
         bool ready = false;
-        uint32_t nextMessage = 0;
+        unsigned long nextMessage = 0;
 
         /**
          * The last bit of the data sent to the MS-3 contains a checksum of the parameter and data.
          */
-        uint8_t checksum(uint8_t *data, uint8_t dataLength) {
+        uint8_t checksum(uint8_t const *data, uint8_t dataLength) {
             uint8_t sum = 0, i;
 
             for (i = 8; i < 12 + dataLength; i++) {
@@ -122,14 +120,14 @@ class MS3 : public USBH_MIDI {
         /**
          * Construct a full message.
          */
-        void send(const uint32_t address, uint8_t *data, uint8_t dataLength, uint8_t action) {
+        void send(const unsigned long address, uint8_t *data, uint8_t dataLength, uint8_t action) {
             uint8_t sysex[14 + dataLength] = {0};
 
             memcpy(sysex + 1, MS3_HEADER, 7);
-            sysex[8] = address >> 24;
-            sysex[9] = address >> 16;
-            sysex[10] = address >> 8;
-            sysex[11] = address;
+            sysex[8] = (uint8_t) (address >> 24);
+            sysex[9] = (uint8_t) (address >> 16);
+            sysex[10] = (uint8_t) (address >> 8);
+            sysex[11] = (uint8_t) (address);
             memcpy(sysex + 12, data, dataLength);
 
             sysex[0] = SYSEX_START;
@@ -152,7 +150,7 @@ class MS3 : public USBH_MIDI {
                 MS3_DEBUG(F(" *** Transfer error: "));
                 MS3_DEBUG(result);
             }
-            MS3_DEBUGLN();
+            MS3_DEBUGLN(F("."));
         }
 
         /**
@@ -175,7 +173,7 @@ class MS3 : public USBH_MIDI {
          *
          * @TODO: support different data lengths.
          */
-        bool receive(uint32_t &parameter, uint8_t *dataOut) {
+        bool receive(unsigned long &parameter, uint8_t *dataOut) {
             uint8_t
                 incoming[MIDI_EVENT_PACKET_SIZE] = {0},
                 data[MIDI_EVENT_PACKET_SIZE] = {0},
@@ -210,12 +208,12 @@ class MS3 : public USBH_MIDI {
                 }
                 MS3_DEBUG(F("RX:"));
                 MS3::printSysEx(data, dataLength);
-                MS3_DEBUGLN();
+                MS3_DEBUGLN(F("."));
 
                 // Return values.
                 parameter = 0;
                 for (i = 0; i < 4; i++) {
-                    parameter += (uint32_t) data[8 + i] << (3 - i) * 8;
+                    parameter += (unsigned long) data[8 + i] << (3 - i) * 8;
                 }
                 dataOut[0] = data[dataLength - 3];
 
@@ -232,11 +230,10 @@ class MS3 : public USBH_MIDI {
             Usb.Task();
             if (Usb.getUsbTaskState() == USB_STATE_RUNNING) {
                 return true;
-            }
-            else if (MS3::lastState != Usb.getUsbTaskState()) {
+            } else if (MS3::lastState != Usb.getUsbTaskState()) {
                 MS3_DEBUG(F("*** USB task state: "));
                 MS3_DEBUG_AS(MS3::lastState = Usb.getUsbTaskState(), HEX);
-                MS3_DEBUGLN();
+                MS3_DEBUGLN(F("."));
                 MS3::ready = false;
             }
 
@@ -280,7 +277,7 @@ class MS3 : public USBH_MIDI {
          * This is the main function for both receiving and sending data when
          * there's nothing to receive.
          */
-        uint8_t update(uint32_t &parameter, uint8_t *data) {
+        uint8_t update(unsigned long &parameter, uint8_t *data) {
 
             // Are we ready?
             if (MS3::isReady()) {
@@ -288,8 +285,7 @@ class MS3 : public USBH_MIDI {
                     MS3::ready = true;
                     return MS3_READY;
                 }
-            }
-            else {
+            } else {
                 return MS3_NOT_READY;
             }
 
@@ -332,14 +328,14 @@ class MS3 : public USBH_MIDI {
         /**
          * Set this single byte parameter on the MS-3. Optionally pad it with leading zero-bytes with a datalength >= 1.
          */
-        void write(const uint32_t address, uint8_t data, uint8_t dataLength = 1) {
+        void write(const unsigned long address, uint8_t data, uint8_t dataLength = 1) {
             Queue.write(address, data, dataLength, MS3_WRITE);
         }
 
         /**
          * Tell the MS-3 to send us the value of this paramater.
          */
-        void read(const uint32_t address, uint8_t data) {
+        void read(const unsigned long address, uint8_t data) {
             Queue.write(address, data, 4, MS3_READ);
         }
 
