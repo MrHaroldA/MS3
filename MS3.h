@@ -118,7 +118,7 @@ class MS3 : public USBH_MIDI {
         }
 
         /**
-         * Construct a full message.
+         * Construct and send a full SysEx message.
          */
         void send(const unsigned long address, uint8_t *data, uint8_t dataLength, uint8_t action) {
             uint8_t sysex[14 + dataLength] = {0};
@@ -326,14 +326,14 @@ class MS3 : public USBH_MIDI {
         }
 
         /**
-         * Set this single byte parameter on the MS-3. Optionally pad it with leading zero-bytes with a datalength >= 1.
+         * Set this single byte parameter on the MS-3. Optionally pad it with leading zero-bytes with a dataLength >= 1.
          */
         void write(const unsigned long address, uint8_t data, uint8_t dataLength = 1) {
             Queue.write(address, data, dataLength, MS3_WRITE);
         }
 
         /**
-         * Tell the MS-3 to send us the value of this paramater.
+         * Tell the MS-3 to send us the value of this parameter.
          */
         void read(const unsigned long address, uint8_t data) {
             Queue.write(address, data, 4, MS3_READ);
