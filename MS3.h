@@ -39,23 +39,23 @@
  * MS3_QUEUE_SIZE: The maximum number of items in the send queue.
  */
 #ifndef MS3_WRITE_INTERVAL_MSEC
-const uint8_t MS3_WRITE_INTERVAL_MSEC = 4;
+const byte MS3_WRITE_INTERVAL_MSEC = 4;
 #endif
 
 #ifndef MS3_READ_INTERVAL_MSEC
-const uint8_t MS3_READ_INTERVAL_MSEC = 25;
+const byte MS3_READ_INTERVAL_MSEC = 25;
 #endif
 
 #ifndef MS3_RECEIVE_INTERVAL_MSEC
-const uint8_t MS3_RECEIVE_INTERVAL_MSEC = 4;
+const byte MS3_RECEIVE_INTERVAL_MSEC = 4;
 #endif
 
 #ifndef MS3_HEADER
-const uint8_t MS3_HEADER[6] = {0x41, 0x00, 0x00, 0x00, 0x00, 0x3B};
+const byte MS3_HEADER[6] = {0x41, 0x00, 0x00, 0x00, 0x00, 0x3B};
 #endif
 
 #ifndef MS3_QUEUE_SIZE
-const uint8_t MS3_QUEUE_SIZE = 20;
+const byte MS3_QUEUE_SIZE = 20;
 #endif
 
 /**
@@ -75,9 +75,9 @@ const uint8_t MS3_QUEUE_SIZE = 20;
 #include "Queue.h"
 
 // General configuration.
-const uint16_t INIT_DELAY_MSEC = 100;
-const uint8_t MS3_WRITE = 0x12;
-const uint8_t MS3_READ = 0x11;
+const unsigned int INIT_DELAY_MSEC = 100;
+const byte MS3_WRITE = 0x12;
+const byte MS3_READ = 0x11;
 
 // Return values.
 const int8_t MS3_NOT_READY = 0;
@@ -89,9 +89,9 @@ const int8_t MS3_ALMOST_IDLE = 5;
 const int8_t MS3_IDLE = 6;
 
 // Fixed data.
-const uint8_t SYSEX_START = 0xF0;
-const uint8_t SYSEX_END = 0xF7;
-const uint8_t HANDSHAKE[15] = {0xF0, 0x7E, 0x00, 0x06, 0x02, 0x41, 0x3B, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7};
+const byte SYSEX_START = 0xF0;
+const byte SYSEX_END = 0xF7;
+const byte HANDSHAKE[15] = {0xF0, 0x7E, 0x00, 0x06, 0x02, 0x41, 0x3B, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xF7};
 const unsigned long P_EDIT = 0x7F000001;
 
 // Load the Queue class.
@@ -100,15 +100,15 @@ Queue Queue;
 class MS3 : public USBH_MIDI {
     private:
         USB Usb;
-        uint8_t lastState = 0;
+        byte lastState = 0;
         bool ready = false;
         unsigned long nextMessage = 0;
 
         /**
          * The last bit of the data sent to the MS-3 contains a checksum of the parameter and data.
          */
-        uint8_t checksum(uint8_t const *data, uint8_t dataLength) {
-            uint8_t sum = 0, i;
+        byte checksum(byte const *data, byte dataLength) {
+            byte sum = 0, i;
 
             for (i = 8; i < 12 + dataLength; i++) {
                 sum = (sum + data[i]) & 0x7F;
@@ -120,14 +120,14 @@ class MS3 : public USBH_MIDI {
         /**
          * Construct and send a full SysEx message.
          */
-        void send(const unsigned long address, uint8_t *data, uint8_t dataLength, uint8_t action) {
-            uint8_t sysex[14 + dataLength] = {0};
+        void send(const unsigned long address, byte *data, byte dataLength, byte action) {
+            byte sysex[14 + dataLength] = {0};
 
             memcpy(sysex + 1, MS3_HEADER, 7);
-            sysex[8] = (uint8_t) (address >> 24);
-            sysex[9] = (uint8_t) (address >> 16);
-            sysex[10] = (uint8_t) (address >> 8);
-            sysex[11] = (uint8_t) (address);
+            sysex[8] = (byte) (address >> 24);
+            sysex[9] = (byte) (address >> 16);
+            sysex[10] = (byte) (address >> 8);
+            sysex[11] = (byte) (address);
             memcpy(sysex + 12, data, dataLength);
 
             sysex[0] = SYSEX_START;
@@ -141,8 +141,8 @@ class MS3 : public USBH_MIDI {
         /**
          * Send the data to the MS-3.
          */
-        void send(uint8_t *data) {
-            uint8_t result, dataLength = MS3::countSysExDataSize(data);
+        void send(byte *data) {
+            byte result, dataLength = MS3::countSysExDataSize(data);
 
             MS3_DEBUG(F("TX:"));
             MS3::printSysEx(data, dataLength);
@@ -156,10 +156,10 @@ class MS3 : public USBH_MIDI {
         /**
          * MS3_DEBUG printer for the received SysEx data.
          */
-        void printSysEx(uint8_t *data, uint8_t dataLength) {
+        void printSysEx(byte *data, byte dataLength) {
             char buf[10];
 
-            for (uint8_t i = 0; i < dataLength; i++) {
+            for (byte i = 0; i < dataLength; i++) {
                 sprintf(buf, " %02X", data[i]);
                 MS3_DEBUG(buf);
             }
@@ -173,29 +173,29 @@ class MS3 : public USBH_MIDI {
          *
          * @TODO: support different data lengths.
          */
-        bool receive(unsigned long &parameter, uint8_t *dataOut) {
-            uint8_t
+        bool receive(unsigned long &parameter, byte *dataOut) {
+            byte
                 incoming[MIDI_EVENT_PACKET_SIZE] = {0},
                 data[MIDI_EVENT_PACKET_SIZE] = {0},
                 dataLength = 0,
                 i;
 
-            uint16_t rcvd;
+            unsigned int rcvd;
 
             if (MS3::RecvData(&rcvd, incoming) == 0) {
                 if (rcvd == 0) {
                     return false;
                 }
 
-                uint8_t *p = incoming;
+                byte *p = incoming;
                 for (i = 0; i < MIDI_EVENT_PACKET_SIZE; i += 4) {
                     if (*p == 0 && *(p + 1) == 0) {
                         break;
                     }
 
-                    uint8_t chunk[3] = {0};
+                    byte chunk[3] = {0};
                     if (MS3::extractSysExData(p, chunk) != 0) {
-                        for (uint8_t j = 0; j < 3; j++) {
+                        for (byte j = 0; j < 3; j++) {
                             data[dataLength] = chunk[j];
                             dataLength++;
 
@@ -263,11 +263,11 @@ class MS3 : public USBH_MIDI {
          * Init the editor mode.
          */
         void setEditorMode() {
-            MS3::send((uint8_t *) HANDSHAKE);
+            MS3::send((byte *) HANDSHAKE);
             delay(MS3_WRITE_INTERVAL_MSEC);
-            MS3::send((uint8_t *) HANDSHAKE);
+            MS3::send((byte *) HANDSHAKE);
             delay(MS3_WRITE_INTERVAL_MSEC);
-            uint8_t data[1] = {0x01};
+            byte data[1] = {0x01};
             MS3::send(P_EDIT, data, 1, MS3_WRITE);
             delay(INIT_DELAY_MSEC);
             MS3_DEBUGLN(F("*** Up and ready!"));
@@ -277,7 +277,7 @@ class MS3 : public USBH_MIDI {
          * This is the main function for both receiving and sending data when
          * there's nothing to receive.
          */
-        uint8_t update(unsigned long &parameter, uint8_t *data) {
+        byte update(unsigned long &parameter, byte *data) {
 
             // Are we ready?
             if (MS3::isReady()) {
@@ -300,7 +300,7 @@ class MS3 : public USBH_MIDI {
             if (MS3::nextMessage <= millis() && Queue.read(item)) {
 
                 // Construct the data to send to the MS-3.
-                uint8_t input[item.dataLength] = {0};
+                byte input[item.dataLength] = {0};
                 input[item.dataLength - 1] = item.data;
 
                 // Send the queue item to the MS-3.
@@ -328,14 +328,14 @@ class MS3 : public USBH_MIDI {
         /**
          * Set this single byte parameter on the MS-3. Optionally pad it with leading zero-bytes with a dataLength >= 1.
          */
-        void write(const unsigned long address, uint8_t data, uint8_t dataLength = 1) {
+        void write(const unsigned long address, byte data, byte dataLength = 1) {
             Queue.write(address, data, dataLength, MS3_WRITE);
         }
 
         /**
          * Tell the MS-3 to send us the value of this parameter.
          */
-        void read(const unsigned long address, uint8_t data) {
+        void read(const unsigned long address, byte data) {
             Queue.write(address, data, 4, MS3_READ);
         }
 

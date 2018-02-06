@@ -6,15 +6,15 @@
 
 typedef struct {
     unsigned long address;
-    uint8_t data;
-    uint8_t dataLength;
-    uint8_t operation;
+    byte data;
+    byte dataLength;
+    byte operation;
 } queueItem;
 
 class Queue {
     private:
         queueItem items[MS3_QUEUE_SIZE] = {};
-        uint8_t writePointer = 0;
+        byte writePointer = 0;
 
         /**
          * Shift an item off the beginning of the queue.
@@ -23,7 +23,7 @@ class Queue {
             queueItem item = Queue::items[0];
 
             // Move all queued items one up.
-            for (uint8_t i = 1; i < Queue::writePointer; i++) {
+            for (byte i = 1; i < Queue::writePointer; i++) {
                 Queue::items[i - 1] = Queue::items[i];
             }
             Queue::writePointer--;
@@ -57,7 +57,7 @@ class Queue {
         /**
          * Add an item to the queue.
          */
-        void write(unsigned long address, uint8_t data, uint8_t dataLength, uint8_t operation) {
+        void write(unsigned long address, byte data, byte dataLength, byte operation) {
             if (Queue::writePointer == MS3_QUEUE_SIZE) {
                 MS3_DEBUG(F("*** Queue is full! Discarding the first item: 0x"));
                 MS3_DEBUG_AS(Queue::items[0].address, HEX);
