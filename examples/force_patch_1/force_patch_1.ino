@@ -15,23 +15,22 @@
 MS3 MS3;
 
 // This is the address for the program change.
-const uint32_t P_PATCH = 0x00010000;
+const unsigned long P_PATCH = 0x00010000;
 
 /**
  * Incoming data handler.
  */
-void parseData(uint32_t parameter, uint8_t *data) {
+void parseData(unsigned long parameter, byte data) {
     switch (parameter) {
         case P_PATCH:
             Serial.print(F("Patch number received: "));
-            Serial.println(data[0]);
+            Serial.println(data);
 
             // Slowly go back to patch 0.
-            if (data[0] > 0) {
+            if (data > 0) {
                 delay(750);
-                MS3.write(P_PATCH, data[0] - 1, 2);
-            }
-            else {
+                MS3.write(P_PATCH, data - 1, 2);
+            } else {
                 Serial.println(F("Back at zero!"));
             }
             break;
@@ -48,7 +47,8 @@ void parseData(uint32_t parameter, uint8_t *data) {
 void setup() {
     Serial.begin(115200);
     while (!Serial) {}
-    Serial.println(F("Ready!")); Serial.println();
+    Serial.println(F("Ready!"));
+    Serial.println();
     MS3.begin();
 }
 
@@ -58,8 +58,8 @@ void setup() {
 void loop() {
 
     // Check for incoming data or send a queued item.
-    uint32_t parameter = 0;
-    uint8_t data[1] = {};
+    unsigned long parameter = 0;
+    byte data = 0;
     switch (MS3.update(parameter, data)) {
 
         // Fetch the current active patch on the MS-3.
