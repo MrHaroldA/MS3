@@ -170,10 +170,8 @@ class MS3 : public USBH_MIDI {
 
         /**
          * Check if we've received any data.
-         *
-         * @TODO: support different data lengths.
          */
-        bool receive(unsigned long &parameter, byte *dataOut) {
+        bool receive(unsigned long &parameter, byte &dataOut) {
             byte
                 incoming[MIDI_EVENT_PACKET_SIZE] = {0},
                 data[MIDI_EVENT_PACKET_SIZE] = {0},
@@ -195,11 +193,11 @@ class MS3 : public USBH_MIDI {
 
                     byte chunk[3] = {0};
                     if (MS3::extractSysExData(p, chunk) != 0) {
-                        for (byte j = 0; j < 3; j++) {
-                            data[dataLength] = chunk[j];
+                        for (byte part : chunk) {
+                            data[dataLength] = part;
                             dataLength++;
 
-                            if (chunk[j] == SYSEX_END) {
+                            if (part == SYSEX_END) {
                                 break;
                             }
                         }
@@ -215,7 +213,12 @@ class MS3 : public USBH_MIDI {
                 for (i = 0; i < 4; i++) {
                     parameter += (unsigned long) data[8 + i] << (3 - i) * 8;
                 }
-                dataOut[0] = data[dataLength - 3];
+                dataOut = (byte) data[dataLength - 3];
+
+                // If the data is one byte longer, add 128 to the return value for a full byte range.
+                if (dataLength == 16 && data[dataLength - 4] == 0x01) {
+                    dataOut += 128;
+                }
 
                 return true;
             }
@@ -277,7 +280,7 @@ class MS3 : public USBH_MIDI {
          * This is the main function for both receiving and sending data when
          * there's nothing to receive.
          */
-        byte update(unsigned long &parameter, byte *data) {
+        byte update(unsigned long &parameter, byte &data) {
 
             // Are we ready?
             if (MS3::isReady()) {
@@ -301,7 +304,10 @@ class MS3 : public USBH_MIDI {
 
                 // Construct the data to send to the MS-3.
                 byte input[item.dataLength] = {0};
-                input[item.dataLength - 1] = item.data;
+                input[item.dataLength - 1] = item.data % 128;
+                if (item.dataLength >= 2) {
+                    input[item.dataLength - 2] = (item.data >= 128) ? 1 : 0;
+                }
 
                 // Send the queue item to the MS-3.
                 MS3::send(
