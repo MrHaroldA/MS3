@@ -47,9 +47,14 @@ void parseData(unsigned long parameter, byte data) {
 void setup() {
     Serial.begin(115200);
     while (!Serial) {}
+
+    if (!MS3.begin()) {
+        Serial.println(F("*** USB / MS3 init error! ***"));
+        while (true);
+    }
+
     Serial.println(F("Ready!"));
     Serial.println();
-    MS3.begin();
 }
 
 /**
