@@ -178,7 +178,7 @@ class MS3 : public USBH_MIDI {
                 dataLength = 0,
                 i;
 
-            unsigned int rcvd;
+            uint16_t rcvd;
 
             if (MS3::RecvData(&rcvd, incoming) == 0) {
                 if (rcvd == 0) {
