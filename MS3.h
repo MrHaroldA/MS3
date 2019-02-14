@@ -35,27 +35,27 @@
  * MS3_WRITE_INTERVAL_MSEC: The delay before a new message is sent after a write action.
  * MS3_READ_INTERVAL_MSEC: The delay before a new message is sent after a read action.
  * MS3_RECEIVE_INTERVAL_MSEC: The delay after receiving data from the MS-3.
- * MS3_HEADER: The manufacturer and device id header.
+ * MS3_HEADER: The manufacturer and device id header. Define MS3_CUSTOM_HEADER to override this.
  * MS3_QUEUE_SIZE: The maximum number of items in the send queue.
  */
 #ifndef MS3_WRITE_INTERVAL_MSEC
-const byte MS3_WRITE_INTERVAL_MSEC = 4;
+#define MS3_WRITE_INTERVAL_MSEC 4
 #endif
 
 #ifndef MS3_READ_INTERVAL_MSEC
-const byte MS3_READ_INTERVAL_MSEC = 25;
+#define MS3_READ_INTERVAL_MSEC 25
 #endif
 
 #ifndef MS3_RECEIVE_INTERVAL_MSEC
-const byte MS3_RECEIVE_INTERVAL_MSEC = 4;
+#define MS3_RECEIVE_INTERVAL_MSEC  4
 #endif
 
-#ifndef MS3_HEADER
+#ifndef MS3_CUSTOM_HEADER
 const byte MS3_HEADER[6] = {0x41, 0x00, 0x00, 0x00, 0x00, 0x3B};
 #endif
 
 #ifndef MS3_QUEUE_SIZE
-const byte MS3_QUEUE_SIZE = 20;
+#define MS3_QUEUE_SIZE 20
 #endif
 
 /**
