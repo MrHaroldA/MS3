@@ -111,10 +111,10 @@ class MS3 : public USBH_MIDI {
             byte sum = 0, i;
 
             for (i = 8; i < 12 + dataLength; i++) {
-                sum = (sum + data[i]) & 0x7F;
+                sum = (sum + data[i]) & (byte) 0x7F;
             }
 
-            return (128 - sum) & 0x7F;
+            return ((byte) 128 - sum) & (byte) 0x7F;
         }
 
         /**
@@ -142,7 +142,7 @@ class MS3 : public USBH_MIDI {
          * Send the data to the MS-3.
          */
         void send(byte *data) {
-            byte result, dataLength = MS3::countSysExDataSize(data);
+            byte result, dataLength = (byte) MS3::countSysExDataSize(data);
 
             MS3_DEBUG(F("TX:"));
             MS3::printSysEx(data, dataLength);
@@ -304,9 +304,9 @@ class MS3 : public USBH_MIDI {
 
                 // Construct the data to send to the MS-3.
                 byte input[item.dataLength] = {0};
-                input[item.dataLength - 1] = item.data % 128;
+                input[item.dataLength - 1] = item.data % (byte) 128;
                 if (item.dataLength >= 2) {
-                    input[item.dataLength - 2] = (item.data >= 128) ? 1 : 0;
+                    input[item.dataLength - 2] = (item.data >= 128) ? (byte) 1 : (byte) 0;
                 }
 
                 // Send the queue item to the MS-3.
