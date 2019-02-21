@@ -58,7 +58,7 @@ unsigned long timerStart = 0;
 /**
  * Incoming data handler.
  */
-void parseData(unsigned long parameter, byte data) {
+void parseData(unsigned long parameter, int data) {
     switch (parameter) {
 
         // Refresh all effect states on patch changes.
@@ -206,7 +206,7 @@ void loop() {
 
     // The MS-3 library stores the parameter and data in these variables.
     unsigned long parameter = 0;
-    byte data = 0;
+    int data = 0;
 
     // Check for incoming data or send a queued item.
     switch (MS3.update(parameter, data)) {

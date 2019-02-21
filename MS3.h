@@ -171,7 +171,7 @@ class MS3 : public USBH_MIDI {
         /**
          * Check if we've received any data.
          */
-        bool receive(unsigned long &parameter, byte &dataOut) {
+        bool receive(unsigned long &parameter, int &dataOut) {
             byte
                 incoming[MIDI_EVENT_PACKET_SIZE] = {0},
                 data[MIDI_EVENT_PACKET_SIZE] = {0},
@@ -215,9 +215,9 @@ class MS3 : public USBH_MIDI {
                 }
                 dataOut = (byte) data[dataLength - 3];
 
-                // If the data is one byte longer, add 128 to the return value for a full byte range.
-                if (dataLength == 16 && data[dataLength - 4] == 0x01) {
-                    dataOut += 128;
+                // If the data is one byte longer, add x times 128 to the return value for a full integer range.
+                if (dataLength == 16) {
+                    dataOut += data[dataLength - 4] * 128;
                 }
 
                 return true;
@@ -280,7 +280,7 @@ class MS3 : public USBH_MIDI {
          * This is the main function for both receiving and sending data when
          * there's nothing to receive.
          */
-        byte update(unsigned long &parameter, byte &data) {
+        byte update(unsigned long &parameter, int &data) {
 
             // Are we ready?
             if (MS3::isReady()) {

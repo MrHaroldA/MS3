@@ -20,7 +20,7 @@ const unsigned long P_PATCH = 0x00010000;
 /**
  * Incoming data handler.
  */
-void parseData(unsigned long parameter, byte data) {
+void parseData(unsigned long parameter, int data) {
     switch (parameter) {
         case P_PATCH:
             Serial.print(F("Patch number received: "));
@@ -64,7 +64,7 @@ void loop() {
 
     // Check for incoming data or send a queued item.
     unsigned long parameter = 0;
-    byte data = 0;
+    int data = 0;
     switch (MS3.update(parameter, data)) {
 
         // Fetch the current active patch on the MS-3.
