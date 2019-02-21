@@ -265,12 +265,12 @@ class MS3 : public USBH_MIDI {
         /**
          * Init the editor mode.
          */
-        void setEditorMode() {
+        void setEditorMode(bool active = true) {
             MS3::send((byte *) HANDSHAKE);
             delay(MS3_WRITE_INTERVAL_MSEC);
             MS3::send((byte *) HANDSHAKE);
             delay(MS3_WRITE_INTERVAL_MSEC);
-            byte data[1] = {0x01};
+            byte data[1] = {(active) ? (byte) 0x01 : (byte) 0x00};
             MS3::send(P_EDIT, data, 1, MS3_WRITE);
             delay(INIT_DELAY_MSEC);
             MS3_DEBUGLN(F("*** Up and ready!"));
