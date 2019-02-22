@@ -1,5 +1,5 @@
 # Boss MS-3 Arduino library
-Use this library to connect to, query and control the Boss MS-3 and compatible devices.
+Use this library to connect to, query and control the Boss MS-3 and compatible devices like the Katana.
 
 All issues, feature requests, praise and bug reports should be made at the GitHub project at https://github.com/MrHaroldA/MS3.
 
