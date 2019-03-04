@@ -10,7 +10,7 @@ The library is close to being finished, as it seems to be pretty stable for cont
 You will need a USB Host Shield compatible with the Arduino of your choice and the USB_Host_Shield_2.0 library.
 * https://www.circuitsathome.com/usb-host-shield-hardware-manual/
 * https://github.com/felis/USB_Host_Shield_2.0
-** `pio lib install USB-Host-Shield-20`
+  * `pio lib install USB-Host-Shield-20`
 
 ## Getting started
 If you have an Arduino and USB shield available, check out one of the examples provided with this library. If you need help connecting to your MS-3 you may open a question by clicking the 'New issue' button. No; I won't write your application for you, but I might give you some pointers on how to get started. 
