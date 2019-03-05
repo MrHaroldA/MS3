@@ -107,6 +107,8 @@ class MS3 : public USBH_MIDI {
         bool ready = false;
         unsigned long nextMessage = 0;
 
+        void (*dataReceiveCallback)(byte *data, byte data_length);
+
         /**
          * The last bit of the data sent to the MS-3 contains a checksum of the parameter and data.
          */
@@ -174,12 +176,13 @@ class MS3 : public USBH_MIDI {
         /**
          * Check if we've received any data.
          */
-        bool receive(unsigned long &parameter, int &dataOut) {
+        bool receive() {
             byte
                 incoming[MIDI_EVENT_PACKET_SIZE] = {0},
-                data[MIDI_EVENT_PACKET_SIZE] = {0},
-                dataLength = 0,
                 i;
+
+            byte dataLength = 0;
+            byte data[MIDI_MAX_SYSEX_SIZE]; // @TODO: limit size.
 
             uint16_t rcvd;
 
@@ -197,31 +200,28 @@ class MS3 : public USBH_MIDI {
                     byte chunk[3] = {0};
                     if (MS3::extractSysExData(p, chunk) != 0) {
                         for (byte part : chunk) {
-                            data[dataLength] = part;
-                            dataLength++;
-
+                            if (part && dataLength == 0 && part != SYSEX_START) {
+                                MS3_DEBUG(F("Invalid SysEx message, expected SYSEX_BEGIN, got "));
+                                MS3_DEBUG_AS(part, HEX);
+                                MS3_DEBUGLN();
+                            } else {
+                                data[dataLength] = part;
+                                dataLength++;
+                            }
                             if (part == SYSEX_END) {
-                                break;
+                                dataReceiveCallback(data, dataLength);
+                                // @TODO: Add data to the received queue and start over with dataLength = 0 in case messages got wrapped.
+                                goto Done;
                             }
                         }
                         p += 4;
                     }
                 }
+
+                Done:
                 MS3_DEBUG(F("RX:"));
                 MS3::printSysEx(data, dataLength);
                 MS3_DEBUGLN(F("."));
-
-                // Return values.
-                parameter = 0;
-                for (i = 0; i < 4; i++) {
-                    parameter += (unsigned long) data[8 + i] << (3 - i) * 8;
-                }
-                dataOut = (byte) data[dataLength - 3];
-
-                // If the data is one byte longer, add x times 128 to the return value for a full integer range.
-                if (dataLength == 16) {
-                    dataOut += data[dataLength - 4] * 128;
-                }
 
                 return true;
             }
@@ -247,6 +247,18 @@ class MS3 : public USBH_MIDI {
         }
 
     public:
+        void setDataReceiveCallback(void (*fptr)(byte *data, byte data_length)) {
+            dataReceiveCallback = fptr;
+        }
+
+        unsigned long extractParameter(byte *data) {
+            unsigned long parameter = 0;
+            for (byte i = 0; i < 4; i++) {
+                parameter += (unsigned long) data[8 + i] << (3 - i) * 8;
+            }
+
+            return parameter;
+        }
 
         /**
          * Constructor.
@@ -283,7 +295,7 @@ class MS3 : public USBH_MIDI {
          * This is the main function for both receiving and sending data when
          * there's nothing to receive.
          */
-        byte update(unsigned long &parameter, int &data) {
+        byte update() {
 
             // Are we ready?
             if (MS3::isReady()) {
@@ -296,7 +308,7 @@ class MS3 : public USBH_MIDI {
             }
 
             // Is there data waiting to be picked up?
-            if (MS3::receive(parameter, data)) {
+            if (MS3::receive()) {
                 MS3::nextMessage = millis() + MS3_RECEIVE_INTERVAL_MSEC;
                 return MS3_DATA_RECEIVED;
             }
