@@ -109,6 +109,8 @@ class MS3 : public USBH_MIDI {
 
         void (*dataReceiveCallback)(byte *data, byte data_length);
 
+        dataReceiveCallback = NULL;
+
         /**
          * The last bit of the data sent to the MS-3 contains a checksum of the parameter and data.
          */
